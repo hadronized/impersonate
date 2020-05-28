@@ -1,3 +1,5 @@
+pub mod trainers;
+
 use itertools::Itertools as _;
 use rand::{thread_rng, Rng as _};
 use std::collections::HashMap;
@@ -189,8 +191,9 @@ pub enum ChainError {
 pub trait Trainer {
   /// Adapt to the source and train the input [`MarkovChainGenerator`].
   fn source_train(
-    &self,
+    &mut self,
     markov_chain_generator: &mut MarkovChainGenerator,
+    learn_params: LearningParameters,
   ) -> Result<(), ChainError>;
 }
 
