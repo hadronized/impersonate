@@ -125,7 +125,6 @@ impl MarkovChainGenerator {
 
   /// Generate a random chain.
   pub fn generate_chain(&self, chain_param: &ChainParameters) -> Result<String, ChainError> {
-    let mut output = String::new();
     let mut rng = thread_rng();
     let ChainParameters {
       max_state_traversal,
@@ -139,8 +138,7 @@ impl MarkovChainGenerator {
       .nth(ri)
       .ok_or_else(|| ChainError::TooFewInitialStates(self.states.len()))?;
 
-    eprintln!("initial state is {}", key);
-    output = key.to_string();
+    let mut output = key.to_string();
 
     for _ in 0..max_state_traversal.unwrap_or(usize::max_value()) {
       if let Some(state) = self.states.get(&key) {
@@ -151,7 +149,7 @@ impl MarkovChainGenerator {
         let ri = rng.gen_range(0, states.len());
         key = &states[ri].0;
 
-        write!(&mut output, " {}", key.to_string());
+        write!(&mut output, " {}", key.to_string()).unwrap();
       } else {
         break;
       }
@@ -168,14 +166,14 @@ pub struct LearningParameters {
   ///
   /// Minimum value is `1` and is will generate sentences that makes very little sense. Higher
   /// values will generate more sense but a too high value will make the Markov states “poor”.
-  wording_size: usize,
+  pub wording_size: usize,
 }
 
 /// Chain generation parameters.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ChainParameters {
   /// Number of states to go through at maximum.
-  max_state_traversal: Option<usize>,
+  pub max_state_traversal: Option<usize>,
 }
 
 /// Chain generation error.

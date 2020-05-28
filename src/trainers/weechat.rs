@@ -7,22 +7,24 @@ use crate::{ChainError, LearningParameters, MarkovChainGenerator, Trainer};
 
 lazy_static! {
   static ref REGEX_LINE: Regex =
-    Regex::new(r"(^\d{4}-\d{2}-\d{2} )?\d{2}:\d{2}:\d{2}: (.*)$").unwrap();
+    Regex::new(r"(\d{4}-\d{2}-\d{2}\s+)?\d{2}:\d{2}:\d{2}\s+(.*)").unwrap();
 }
 
 /// The content of a weechat log.
-pub struct WeechatLog {
+pub struct WeechatLogTrainer {
   lines: Vec<String>,
   /// The author we are interested in
   author: String,
 }
 
-impl WeechatLog {
-  pub fn new(content: String, author: String) -> Self {
-    let lines = content
+impl WeechatLogTrainer {
+  pub fn new(author: impl Into<String>, content: impl Into<String>) -> Self {
+    let lines: Vec<_> = content
+      .into()
       .split_terminator('\n')
       .map(|line| line.to_owned())
       .collect();
+    let author = author.into();
 
     Self { lines, author }
   }
@@ -35,27 +37,31 @@ impl WeechatLog {
           || captures[2].starts_with("<--")
           || captures[2].starts_with("-->"))
       } else {
-        true
+        false
       }
     });
   }
 
   /// Clean up lines to remove dates and nicknames.
   fn cleanup(&mut self) {
-    let author_start = format!("{} ", self.author);
-
     for line in &mut self.lines {
       // remove the date
       if let Some(captures) = REGEX_LINE.captures(line) {
-        let input = &captures[2];
+        let mut input = &captures[2];
 
-        if input.starts_with(&author_start) {
+        if !input.is_empty() && input.as_bytes()[0] == b'@' {
+          input = &input[1..];
+        }
+
+        if input.starts_with(&self.author) {
           // remove the nickname
-          let content = input[author_start.len()..].to_owned();
+          let content = input[self.author.len()..].trim().to_owned();
+          eprintln!("{}", content);
 
           *line = content;
         } else {
           // set the line to the empty line so that we drop it
+          eprintln!("\tignoring {}", input);
           *line = String::new();
         }
       }
@@ -66,7 +72,7 @@ impl WeechatLog {
   }
 }
 
-impl Trainer for WeechatLog {
+impl Trainer for WeechatLogTrainer {
   fn source_train(
     &mut self,
     markov_chain_generator: &mut MarkovChainGenerator,
@@ -75,6 +81,7 @@ impl Trainer for WeechatLog {
     self.filter_noise();
     self.cleanup();
 
+    eprintln!("learning from Weechat log ({} lines)", self.lines.len());
     for line in &self.lines {
       markov_chain_generator.train(&learn_params, line);
     }
