@@ -1,0 +1,9 @@
+[package]
+name = "impersonate"
+version = "0.1.0"
+authors = ["Dimitri Sabadie <dimitri.sabadie@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+itertools = "0.9"
+rand = "0.7.3"
