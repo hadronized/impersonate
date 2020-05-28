@@ -182,6 +182,18 @@ pub enum ChainError {
   TooFewInitialStates(usize),
 }
 
+/// A way to train a Markov chain generator based on a source.
+///
+/// This trait allows to adapt the way a Markov chain generator can learn without having to know
+/// the format of the input source.
+pub trait Trainer {
+  /// Adapt to the source and train the input [`MarkovChainGenerator`].
+  fn source_train(
+    &self,
+    markov_chain_generator: &mut MarkovChainGenerator,
+  ) -> Result<(), ChainError>;
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
