@@ -125,6 +125,9 @@ impl MarkovChainGenerator {
   pub fn generate_chain(&self, chain_param: &ChainParameters) -> Result<String, ChainError> {
     let mut output = String::new();
     let mut rng = thread_rng();
+    let ChainParameters {
+      max_state_traversal,
+    } = *chain_param;
 
     // get the initial state
     let ri = rng.gen_range(0, self.states.len());
@@ -137,7 +140,7 @@ impl MarkovChainGenerator {
     eprintln!("initial state is {}", key);
     output = key.to_string();
 
-    for _ in 0..10 {
+    for _ in 0..max_state_traversal.unwrap_or(usize::max_value()) {
       if let Some(state) = self.states.get(&key) {
         let mut states = state.nexts.iter().collect::<Vec<_>>();
         states.sort_by(|(_, a), (_, b)| a.count.cmp(&b.count));
